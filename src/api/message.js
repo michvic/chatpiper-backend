@@ -1,11 +1,11 @@
 const Message = require('../models/message')
 
-module.exports = app => {
+module.exports = async app => {
 
-  let messages =[]
-
-  app.io.on('connection', client => {
+  app.io.on('connection', async  client => {
     console.log('New Connection: ', client.id);
+
+    messages = await Message.find()
 
     client.emit('previousMessages', messages);
 
@@ -13,12 +13,8 @@ module.exports = app => {
       const message = new Message(data)
 
       await message.save()
-      
-
-      messages.push(data)
       console.log(message)
-
-      client.broadcast.emit('receivedMessage', data);
+      client.broadcast.emit('receivedMessage', message);
     })
   });
 

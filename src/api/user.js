@@ -1,35 +1,55 @@
 const User = require('../models/user');
+const {jwtsecret} = require('../config')
+const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt-nodejs");
+
+
+const encryptPassword = (password) => {
+    const salt = bcrypt.genSaltSync(10);
+    return bcrypt.hashSync(password, salt);
+};
 
 module.exports = app => {
-    const createUser = (req, res) => {
-        const body = req.body
+    const createUser = async (req, res) => {
+        const {username, password} = req.body
   
-        if(!body){
+        if(!username ||  !password){
             return res.status(400).json({
                 success: false,
-                error: 'password or name not provide',
+                error: 'password or username not provide',
             })
         }
 
-        const user = new User(body);
+        try {
+            const user = new User({username, password:encryptPassword(password) });
 
-        user
-        .save()
-        .then(() => {
+            await user.save()
+
+            let payload = jwt.sign( {
+                id: user._id,
+                username: user.username,
+            }, jwtsecret);
+
             return res.status(201).json({
                 success: true,
                 id: user._id,
+                username: user.username,
+                token: payload,
                 message: 'User created!',
             })
-        })
-        .catch(error => {
+            
+        } catch (error) {
             return res.status(500).json({
                 error,
                 message: 'User not created!',
             })
-        })
+        }
 
     }
 
-    return {createUser}
+    const loginUser = (req, res) =>{
+        
+    }
+
+    return {createUser, loginUser}
 }
