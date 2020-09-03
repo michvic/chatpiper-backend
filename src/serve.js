@@ -1,7 +1,10 @@
+require('dotenv').config()
+
 const express = require('express');
 const consign = require('consign');
 const bodyParser = require('body-parser')
 const cors = require('cors')
+
 
 const db = require('./config/bd');
 
@@ -11,7 +14,7 @@ const io = require('socket.io')(server)
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000'
+    origin: process.env.CORS_URI
   }))
 app.use(bodyParser.json())
 app.use(express.json())
@@ -25,7 +28,7 @@ consign({cwd: 'src'})
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-server.listen(4000,()=>{
+server.listen(process.env.PORT || 4000,()=>{
     console.log('Backend executando...')
 })
 
