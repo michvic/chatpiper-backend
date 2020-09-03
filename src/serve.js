@@ -11,7 +11,7 @@ const io = require('socket.io')(server)
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000' // URL of the react (Frontend) app
+    origin: 'http://localhost:3000'
   }))
 app.use(bodyParser.json())
 app.use(express.json())
@@ -19,15 +19,13 @@ app.use(express.json())
 app.io = io;
 
 consign({cwd: 'src'})
-    .include('./middlewares/auth.js')
     .then('./api')
     .then('./config/routes.js')
     .into(app)
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-
-
 server.listen(4000,()=>{
     console.log('Backend executando...')
 })
+

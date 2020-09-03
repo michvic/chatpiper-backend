@@ -10,7 +10,7 @@ const encryptPassword = (password) => {
 };
 
 module.exports = app => {
-    const createUser = async (req, res) => {
+    const create = async (req, res) => {
         const {username, password} = req.body
   
         if(!username ||  !password){
@@ -21,21 +21,30 @@ module.exports = app => {
         }
 
         try {
+            userFromDb = await User.find({username: username})
+
+            if(userFromDb.length){
+                throw 'User is already registered'
+            }
+                
+
             const user = new User({username, password:encryptPassword(password) });
 
             await user.save()
 
-            let payload = jwt.sign( {
+            
+
+            let payload = {
                 id: user._id,
                 username: user.username,
-            }, jwtsecret);
+                profile: require('../config/userProfile')(user.profileId)
+            }
 
             return res.status(201).json({
                 success: true,
-                id: user._id,
-                username: user.username,
-                token: payload,
-                message: 'User created!',
+                ...payload,
+                token: jwt.sign(payload, jwtsecret),
+                message: 'User logged!',
             })
             
         } catch (error) {
@@ -47,9 +56,45 @@ module.exports = app => {
 
     }
 
-    const loginUser = (req, res) =>{
-        
+    const signin = async  (req, res) =>{
+        const {username, password} = req.body
+  
+        if(!username ||  !password){
+            return res.status(400).json({
+                success: false,
+                error: 'password or username not provide',
+            })
+        }
+
+        try {
+            const user = await User.findOne({username: username})
+            
+            if( !user ) throw 'User not registered'
+            
+            
+            const isMatch = bcrypt.compareSync(password, user.password);
+            if (!isMatch)  throw 'Password incorret!'
+
+            let payload = {
+                id: user._id,
+                username: user.username,
+                profile: require('../config/userProfile')(user.profileId)
+            }
+
+            return res.status(201).json({
+                success: true,
+                ...payload,
+                token: jwt.sign(payload, jwtsecret),
+                message: 'User logged!',
+            })
+            
+        } catch (error) {
+            return res.status(500).json({
+                error,
+                message: 'User not logged!',
+            })
+        }
     }
 
-    return {createUser, loginUser}
+    return {create, signin}
 }

@@ -1,21 +1,38 @@
 const Message = require('../models/message')
 
-module.exports = async app => {
+module.exports = app => {
+    const create = async (req, res) => {
+        const body = req.body
 
-  app.io.on('connection', async  client => {
-    console.log('New Connection: ', client.id);
+        if(!body){
+            throw 'Required fields not have been filled!'
+        }
+        console.log(body)
+        
+        try {
+            const msg = new Message(body)
 
-    messages = await Message.find()
+            await msg.save()
 
-    client.emit('previousMessages', messages);
+            return res.status(200).json({
+                success: true,
+                ...msg,
+                message: 'Message successfully registered '
+            })
+        } catch (error) {
+            
+        }
+        
+    }
+    const find = async (req, res) => {
+        const messages = await Message.find();
 
-    client.on('sendMessage', async data => {
-      const message = new Message(data)
+        return res.status(200).json({
+            success: true,
+            messages,
+            message: 'Fetch messages!',
+        })
+    }
 
-      await message.save()
-      console.log(message)
-      client.broadcast.emit('receivedMessage', message);
-    })
-  });
-
+    return {create,find}
 }
